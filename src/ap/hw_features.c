@@ -836,8 +836,26 @@ int hostapd_check_ht_capab(struct hostapd_iface *iface)
 	ret = ieee80211n_check_40mhz(iface);
 	if (ret)
 		return ret;
-	if (!ieee80211n_allowed_ht40_channel_pair(iface))
+	if (!ieee80211n_allowed_ht40_channel_pair(iface)) {
+		if (iface->conf->no_pri_sec_switch) {
+			/* VirtualAP: with no_pri_sec_switch the OBSS scan is
+			 * skipped, so the graceful 20 MHz fallback in
+			 * ieee80211n_check_scan() never runs. Mirror it here
+			 * instead of failing: FullMAC drivers (Broadcom on the
+			 * Galaxy S10) report the standard HT40 secondary as
+			 * disallowed yet bump the width back up in firmware, so
+			 * a hard failure would needlessly kill the AP. */
+			iface->conf->secondary_channel = 0;
+			hostapd_set_oper_centr_freq_seg0_idx(iface->conf, 0);
+			hostapd_set_oper_centr_freq_seg1_idx(iface->conf, 0);
+			hostapd_set_oper_chwidth(iface->conf,
+						 CONF_OPER_CHWIDTH_USE_HT);
+			wpa_printf(MSG_INFO,
+				   "Fallback to 20 MHz (no_pri_sec_switch)");
+			return 0;
+		}
 		return -1;
+	}
 
 	return 0;
 }
