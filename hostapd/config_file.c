@@ -3542,6 +3542,14 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		conf->ht_vht_twt_responder = atoi(pos);
 	} else if (os_strcmp(buf, "obss_interval") == 0) {
 		conf->obss_interval = atoi(pos);
+	} else if (os_strcmp(buf, "no_pri_sec_switch") == 0) {
+		/* VirtualAP: skip the HT40 OBSS coexistence scan
+		 * (ieee80211n_check_40mhz). FullMAC chips (e.g. Broadcom
+		 * brcmfmac on the Galaxy S10) cannot scan on an AP vif and
+		 * return -95, aborting hostapd for any HT40/VHT config. The
+		 * field already exists and gates the scan; upstream just
+		 * never wired it to the config parser. */
+		conf->no_pri_sec_switch = atoi(pos);
 #ifdef CONFIG_IEEE80211AC
 	} else if (os_strcmp(buf, "ieee80211ac") == 0) {
 		conf->ieee80211ac = atoi(pos);
